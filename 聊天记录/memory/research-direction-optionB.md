@@ -23,7 +23,7 @@ metadata:
 - **Pattern Zooming**（arXiv:2608.03615, 2026, BUPT）✅已核实：宽带 + TD 波束扫描 + 波数域(DFT类)码本 + 角距**闭式几何估计器**，性能仅用 RMSE 实测。**全文无 Cramér/CRB**、无码本最优设计、无通感折中（tradeoff 命中 0）。是最强竞品（占"训练即定位"headline），但 B 的三支柱它全没做 → B 安全。
 - **Spatial-Chirp**（Shi 等，TWC 2023, arXiv:2210.03345）✅已核实：窄带分层 chirp 码本 + 流形优化 + 交替最小化；无 CRB、无定位（"localization"仅出现在引言分类和参考文献里）。**非竞品**，当基线 + 借优化工具。
 - **Cramér-Rao Bound Optimization for JRC Beamforming**（Fan Liu 等, TSP 2022）✅已核实：这是用户第三篇（不是 Pilot-Efficient）。远场 DFRC 波束成形，min CRB s.t. SINR+功率（问题19）。**这是 B 的方法论母版/骨架**，非竞品。
-- **Pilot-Efficient**（Parvini 等，IEEE OJ-COMS 2026）⚠️**未核实**：公网查无确切标题、至今没读到正文；早前"窄带/子阵定位/无 CRLB"的描述是未读正文时的推测，**不可当定论**。唯一残留风险点（标题含 "Codebook Design"）。拿到 PDF 后须逐条确认 (a)(b)(c)。
+- **Pilot-Efficient**（Parvini 等, TU Dresden, IEEE OJ-COMS 2026, DOI 10.1109/OJCOMS.2026.3690933）✅**已核实**（2026-08-11 读全文 17 页, 用户传进仓库根目录）：**窄带**紧凑近场码本(用多用户干扰+空间相关降码本规模) + 三阶段训练(子阵分层搜 AoD → GILS 几何交叉最小二乘融合定位 → 位置映射到码字)。**无 CRB/Fisher(全文0命中)、无 TTD/beam-split、无通感折中**;码本目标是降规模/抗干扰/省导频。→ **不威胁 B**,反而当动机/基线("已有码本只优化开销/干扰,无人做感知CRLB")。至此 B 的残留风险全部清除。
 
 **因此 B 需重新收窄卖点**：从"边训练边定位"（已被占）→ **"近场宽带 beam-split 训练波形的 CRLB 极限 + CRLB 最优码本设计 + 通信-感知折中"**（这三点已核实的竞品都没做）。若嫌新意余量薄，备选是**波束跟踪**（最不拥挤，但更慢）。
 

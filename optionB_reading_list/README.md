@@ -18,5 +18,5 @@ Spatial-Chirp、Rainbow、综述 2504.05578 等）不在此列。所有条目 ar
 | `CRB_Optimization_NearField_ISAC_Extended_Targets_2604.18166.pdf` | Z. Zhao et al., "Cramér-Rao Bound Optimization for Near-Field ISAC with Extended Targets," 2026 (arXiv:2604.18166) | 标题和 B 很近。确认它做的是**感知波束成形**（扩展目标），而非 **beam-split 训练码本**——若如此则不撞车。 |
 | `Wideband_Compressed-Domain_CRB_NearField_XL-MIMO_2604.08531.pdf` | R. V. Şenyuva, "Wideband Compressed-Domain Cramér–Rao Bounds for Near-Field XL-MIMO," 2026 (arXiv:2604.08531) | 宽带近场 CRB 的最新推导，看它的界分解是否与 B 的推导重叠或可借用。 |
 
-## 仍缺（需你提供）
-- **Pilot-Efficient Beam Training and Codebook Design for Near-Field XL-MIMO Systems**（Parvini 等，据称 OJ-COMS 2026）——公网查无正文，是唯一未核实的潜在竞品（标题含 "Codebook Design"）。拿到 PDF 后须逐条确认它有没有做 (a) CRLB、(b) 按界最优设计码本、(c) 通感折中。
+## ✅ 已核实、已入库（原"仍缺"项）
+- **Pilot-Efficient Beam Training and Codebook Design for Near-Field XL-MIMO Systems**（Parvini, Banerjee, Khan, Nimr, Fettweis, TU Dresden, **IEEE OJ-COMS 2026**, DOI 10.1109/OJCOMS.2026.3690933）——PDF 在仓库根目录。**2026-08-11 读全文核实：不威胁 B。** 它是**窄带**紧凑近场码本（用多用户干扰+空间相关降码本规模）+ 三阶段训练（子阵分层搜 AoD → GILS 几何交叉最小二乘定位 → 位置映射到码字）；**无 CRLB、无 beam-split/TTD、无通感折中**，码本目标是降规模/抗干扰/省导频。→ 当 B 的动机/基线用（"已有近场码本只优化开销/干扰，无人做感知 CRLB 与通感折中"）。至此 B 的三支柱空档对所有已知竞品均已核实成立。
