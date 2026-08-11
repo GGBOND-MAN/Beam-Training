@@ -107,12 +107,25 @@ if strcmpi(mode, "snr")
 
         errT = zeros(nTrials,1);  errR = zeros(nTrials,1);
         mu0v = aux_i.mu0(:);
+        % Off-grid scaling for the refinement (theta ~1e-4 rad, r ~1e-3 m per
+        % unit) so fminsearch treats the two axes comparably.
+        sT = 1e-4;  sR = 1e-3;
         for t = 1:nTrials
             yv = mu0v + sqrt(aux_i.sigma2/2)*(randn(L,1) + 1j*randn(L,1));
-            metric = abs(UgridH * yv).^2 ./ Unorm;   % matched-filter / GLRT
+            metric = abs(UgridH * yv).^2 ./ Unorm;   % coarse matched-filter / GLRT
             [~, gBest] = max(metric);
-            errT(t) = thetaList(gBest) - user.theta;
-            errR(t) = rList(gBest)     - user.r;
+            % IMPORTANT: the coarse grid step (~0.2 m in range) is orders of
+            % magnitude larger than the CRLB (~sub-mm), so a grid-only estimate
+            % is quantization-limited and its RMSE collapses to ~0 (cannot
+            % validate the bound). Refine OFF-GRID with a continuous ML search
+            % (fminsearch = base MATLAB, no toolbox) on the beta-concentrated
+            % likelihood, starting from the coarse basin.
+            p0  = [(thetaList(gBest)-user.theta)/sT, (rList(gBest)-user.r)/sR];
+            obj = @(p) neg_conc_ll(sys, W, user.theta+p(1)*sT, user.r+p(2)*sR, yv);
+            popt = fminsearch(obj, p0, ...
+                optimset('TolX',5e-3,'TolFun',1e-11,'MaxFunEvals',400,'Display','off'));
+            errT(t) = popt(1)*sT;   % theta_hat - user.theta
+            errR(t) = popt(2)*sR;   % r_hat     - user.r
         end
         rmse_theta(i) = sqrt(mean(errT.^2));
         rmse_r(i)     = sqrt(mean(errR.^2));
@@ -200,4 +213,12 @@ function H = channel_rows(sys, r, theta)
 % Wrapper around baseline near_field_channel: returns the M x Nt matrix whose
 % m-th row is the propagation channel to the user on subcarrier m.
 H = near_field_channel(sys.Nt, sys.d, sys.fc, sys.B, sys.M, r, theta);
+end
+
+% =========================================================================
+function nll = neg_conc_ll(sys, W, theta, r, yv)
+% Negative concentrated (complex path-gain beta profiled out) log-likelihood
+% for a hypothesised (theta, r):  argmax_{theta,r} |u'y|^2 / (u'u).
+u   = build_basis(sys, W, theta, r);
+nll = -abs(u' * yv)^2 / real(u' * u);
 end
