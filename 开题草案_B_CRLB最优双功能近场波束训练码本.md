@@ -11,15 +11,21 @@
 
 ## 一、研究 gap 与新颖性防御（最重要，先看这个）
 
-"近场宽带训练 + 少导频角距定位"这块 2026 年迅速变热，有三篇必须切割的竞品：
+"近场宽带训练 + 少导频角距定位"这块 2026 年迅速变热，有几篇必须切割的竞品（✅=已逐字读原文核实，⚠️=未读到正文/描述待核实）：
 
-| 竞品 | 做了什么 | 没做什么（= 你的空档） |
-|---|---|---|
-| **Pattern Zooming**（arXiv:2608.03615, 2026, BUPT） | 宽带 + Full-TTD + 少导频 + 波数域(DFT)码本 + 角距**闭式估计器** | 无 CRLB、无码本最优设计、无通感折中；用波数域码本（非极坐标/beam-split） |
-| **Pilot-Efficient**（Parvini 等, IEEE OJ-COMS 2026） | **窄带** + 子阵三角化 GILS 定位 + 干扰感知码本采样 | 无宽带/TTD/beam-split、无 CRLB、无通感折中 |
-| **Luo & Gao (TWC 2024) / arXiv:2509.14850** | beam-squint + MUSIC 角距定位（**估计器**） | 无码本最优设计、无通感折中 |
+| 竞品 | 做了什么 | 没做什么（= 你的空档） | 核实 |
+|---|---|---|---|
+| **Pattern Zooming**（arXiv:2608.03615, 2026, BUPT） | 宽带 + TD 波束扫描 + 波数域(DFT类)码本 + 角距**闭式几何估计器**；性能仅用 **RMSE** 实测 | 无 CRLB/统计下界、无码本最优设计、无通感折中（全文无 Cramér/CRB）；波数域码本（非极坐标/beam-split） | ✅ 2026-08-11 |
+| **Luo & Gao (TWC 2024) / arXiv:2309.14012 + 2509.14850** | beam-squint + MUSIC 角距定位（**估计器**）；机制最近（也用 TTD 控 squint 让不同子载波指向不同角/距） | 无码本最优设计、无通感折中 | ⚠️ 待读（PDF 已入库） |
+| **Pilot-Efficient**（Parvini 等, TU Dresden, **IEEE OJ-COMS 2026**, DOI 10.1109/OJCOMS.2026.3690933） | **窄带**；紧凑近场码本（用多用户干扰+空间相关降码本规模）+ 三阶段训练：子阵分层搜 AoD → **GILS 几何交叉最小二乘**融合定位 → 位置映射到码字 | 无 CRB/Fisher（全文 0 命中）、无 TTD/beam-split、无通感折中；码本目标是**降规模/抗干扰/省导频**，不是最小化估计界 | ✅ 2026-08-11 |
 
-**共同空档（= B 的立足点）：没有一篇 (a) 推导该类波形的角/距 CRLB，(b) 按最小化 CRLB 去设计训练码本，(c) 给出通信-感知折中。**
+> ✅ **Pilot-Efficient 已核实（2026-08-11 读全文 17 页）**：它与 B 的表面重叠（标题含 "Codebook Design" + 用到定位）是假象——它是**窄带、面向多用户降开销/抗干扰**的码本 + GILS 定位当"选码字的手段"，**没有 CRLB、没有 beam-split、没有通感折中**。反而是 B 的好**动机/基线**："已有近场码本设计只优化规模/干扰/开销，无人刻画或优化感知 CRLB，也无人给通感折中"。
+
+**共同空档（= B 的立足点）：没有一篇 (a) 推导该类波形的角/距 CRLB，(b) 按最小化 CRLB 去设计训练码本，(c) 给出通信-感知折中。**（Pattern Zooming 与 Pilot-Efficient 均已逐字核实确认不做这三点。）
+
+**两篇"帮手"论文（非竞品，已读原文，用作方法论母版与优化工具）：**
+- **Fan Liu et al., "Cramér-Rao Bound Optimization for Joint Radar-Communication Beamforming," TSP 2022** —— 把 CRB 当设计目标的**母版**：其问题 (19) = `min CRB  s.t. 每用户 SINR γ_k ≥ Γ_k + 发射功率预算`（单用户闭式解、多用户 SDR 全局最优）。B 直接抄这个骨架，把变量换成码本参数 (θ₁,α₁,θ₂,α₂)、把 SINR 约束换成通信阵列增益约束。它是**远场、窄带、纯波束成形**——正好把"近场 + 宽带 beam-split 训练码本"整块留给 B。
+- **Xu Shi et al., "Spatial-Chirp Codebook-Based Hierarchical Beam Training," TWC 2023**（arXiv:2210.03345）—— 窄带纯训练、无 CRB、无定位；本文只用作**优化工具来源**（流形优化 + 交替最小化），可搬到 B 第五节的码本参数优化。
 
 **三句话卖点**（写进 Introduction 的 contributions）：
 1. **理论极限**：首次推导近场宽带 distance-dependent beam-split 训练波形下角度/距离估计的 CRLB，写成 TTD/PS 码本参数 (θ₁,α₁,θ₂,α₂) 的显式函数。

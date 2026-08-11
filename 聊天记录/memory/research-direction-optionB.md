@@ -19,11 +19,12 @@ metadata:
 - **已放弃**的方向：ChatGPT 建议的 `limited_ttd_extension`（受限 TTD 硬件感知），因结果半赢半输（只有 coarse-to-fine 赢，delay-aware grouping / group diversity 输），不足以撑期刊。
 - 备选（未选）：波束跟踪（上限更高但慢，可作为 B 之后的第二篇）。
 
-**竞品复核（2026-08-09 读了用户新上传的三篇，在 `extracted/` 有提取文本）：**
-- **Pattern Zooming**（arXiv:2608.03615, 2026, BUPT）：宽带 + Full-TTD + 少导频 + 角距**闭式定位**。**B 的"训练即定位"headline 基本被它占**，是最强竞品。但它没有 CRLB、没有码本最优设计、没有通感折中，用波数域 DFT 码本（B 用极坐标/beam-split 码本）。
-- **Pilot-Efficient**（Parvini 等，IEEE OJ-COMS 2026）：窄带，子阵三角化 GILS 定位 + 干扰感知码本采样。无 TTD/beam-split/CRLB。
-- **Spatial-Chirp**（Shi 等，TWC 2023, arXiv:2210.03345）：窄带分层 chirp 码本 + 流形优化；纯训练，当基线/借优化工具。
+**竞品复核（2026-08-11 逐字读了用户传进仓库 origin/main 的三篇 PDF，PyMuPDF 提取全文）：**
+- **Pattern Zooming**（arXiv:2608.03615, 2026, BUPT）✅已核实：宽带 + TD 波束扫描 + 波数域(DFT类)码本 + 角距**闭式几何估计器**，性能仅用 RMSE 实测。**全文无 Cramér/CRB**、无码本最优设计、无通感折中（tradeoff 命中 0）。是最强竞品（占"训练即定位"headline），但 B 的三支柱它全没做 → B 安全。
+- **Spatial-Chirp**（Shi 等，TWC 2023, arXiv:2210.03345）✅已核实：窄带分层 chirp 码本 + 流形优化 + 交替最小化；无 CRB、无定位（"localization"仅出现在引言分类和参考文献里）。**非竞品**，当基线 + 借优化工具。
+- **Cramér-Rao Bound Optimization for JRC Beamforming**（Fan Liu 等, TSP 2022）✅已核实：这是用户第三篇（不是 Pilot-Efficient）。远场 DFRC 波束成形，min CRB s.t. SINR+功率（问题19）。**这是 B 的方法论母版/骨架**，非竞品。
+- **Pilot-Efficient**（Parvini 等, TU Dresden, IEEE OJ-COMS 2026, DOI 10.1109/OJCOMS.2026.3690933）✅**已核实**（2026-08-11 读全文 17 页, 用户传进仓库根目录）：**窄带**紧凑近场码本(用多用户干扰+空间相关降码本规模) + 三阶段训练(子阵分层搜 AoD → GILS 几何交叉最小二乘融合定位 → 位置映射到码字)。**无 CRB/Fisher(全文0命中)、无 TTD/beam-split、无通感折中**;码本目标是降规模/抗干扰/省导频。→ **不威胁 B**,反而当动机/基线("已有码本只优化开销/干扰,无人做感知CRLB")。至此 B 的残留风险全部清除。
 
-**因此 B 需重新收窄卖点**：从"边训练边定位"（已被占）→ **"近场宽带 beam-split 训练波形的 CRLB 极限 + CRLB 最优码本设计 + 通信-感知折中"**（这三点上述竞品都没做）。把三篇竞品当动机与基线。若嫌新意余量薄，备选是**波束跟踪**（最不拥挤，但更慢）。
+**因此 B 需重新收窄卖点**：从"边训练边定位"（已被占）→ **"近场宽带 beam-split 训练波形的 CRLB 极限 + CRLB 最优码本设计 + 通信-感知折中"**（这三点已核实的竞品都没做）。若嫌新意余量薄，备选是**波束跟踪**（最不拥挤，但更慢）。
 
-CRLB 脚本已写好并修好性能问题：`optionB_crlb/run_crlb_experiment.m`（复用 near_field_channel / delay_polar_2d）。代码基线在 `baseline_distance_dependent/code_nf_distance_dependent_rainbow`。相关背景见 [[matlab-agentic-setup]]、[[pdf-extraction-pymupdf]]。
+**CRLB 脚本状态（2026-08-11 复核）**：`optionB_crlb/run_crlb_experiment.m` FIM/导数/估计器数学正确，签名与 baseline 对齐；但**蒙特卡洛验证 harness 有缺陷**——搜索网格步长(~0.2m)比 CRLB(~0.5mm)粗约 350×、且真值落在网格节点上，导致 MC RMSE 恒为 0（图退化，无法验证界）。修法：真值离网格 + **off-grid 连续 ML 细化**（先粗网格定 basin，再 Nelder-Mead/Gauss-Newton 细化）。已用 NumPy 独立复现验证（`scratchpad/crlb_port_v2.py`）。本机无 MATLAB/Octave（Linux 云端；用户真机是 Windows R2024b）。代码基线已从 zip 解压到 `baseline_distance_dependent/code_nf_distance_dependent_rainbow`。相关背景见 [[matlab-agentic-setup]]、[[pdf-extraction-pymupdf]]。
