@@ -25,7 +25,7 @@ metadata:
 - **Cramér-Rao Bound Optimization for JRC Beamforming**（Fan Liu 等, TSP 2022）✅已核实：这是用户第三篇（不是 Pilot-Efficient）。远场 DFRC 波束成形，min CRB s.t. SINR+功率（问题19）。**这是 B 的方法论母版/骨架**，非竞品。
 - **Pilot-Efficient**（Parvini 等, TU Dresden, IEEE OJ-COMS 2026, DOI 10.1109/OJCOMS.2026.3690933）✅**已核实**（2026-08-11 读全文 17 页, 用户传进仓库根目录）：**窄带**紧凑近场码本(用多用户干扰+空间相关降码本规模) + 三阶段训练(子阵分层搜 AoD → GILS 几何交叉最小二乘融合定位 → 位置映射到码字)。**无 CRB/Fisher(全文0命中)、无 TTD/beam-split、无通感折中**;码本目标是降规模/抗干扰/省导频。→ **不威胁 B**,反而当动机/基线("已有码本只优化开销/干扰,无人做感知CRLB")。至此 B 的残留风险全部清除。
 
-- 🔴 **DPP-ISAC（最危险竞品，2026-08-11 检索发现）**：*"CRB Optimization for Near-Field Wideband ISAC: Delay-Phase Precoding for Beam Squint Mitigation," IEEE WCL 2025, 14(11):3794-3798*。近场宽带+TTD/DPP+角距CRB闭式+min CRB s.t.通信+penalty/BCD+通感折中——**几乎命中B三支柱**。但它是**数据阶段、已知/已跟踪目标的发射预编码器**，非初始接入的训练码本。⚠️仅读到摘要，**动手前必读全文**。→ **B新意余量被压缩**：不能再宣称"首个近场宽带TTD CRB最优ISAC波形"；唯一防线收窄为**"波束训练码本/初始接入/不确定域Ω上的主动实验设计"**（active experiment design，位置未知时设计训练扫描波形）。相关：Fan Liu TSP'22、arXiv:2311.05372、2302.01153 也都是ISAC预编码器（非训练码本）。
+- 🔴 **DPP-ISAC（最危险竞品，2026-08-11 检索发现）**：*"CRB Optimization for Near-Field Wideband ISAC: Delay-Phase Precoding for Beam Squint Mitigation," Z.Zhang/Z.Wei/Z.Xu/H.Zeng/X.Zhu, IEEE WCL 2025, 14(11):3794-3798*。近场宽带+TTD/DPP+角距CRB闭式+min CRB s.t.通信+penalty/BCD+通感折中——**几乎命中B三支柱**。**✅ 2026-08-12 判决：B防线守得住（高置信）。** 依据(摘要+5源核实,全文付费墙未读,无arXiv版)：它是5页letter,优化变量=**数据阶段发射预编码器**,被感知的是**目标**,**通篇无beam training/codebook/初始接入/导频**。整个近场宽带ISAC-CRB簇(DPP-ISAC/Fan Liu/2311.05372/2302.01153/2412.13532/2603.27726)全是预编码器或界分析,无一做训练码本主动设计→B在"训练码本/初始接入/不确定域Ω主动实验设计"这条线独占。残留:仍宜拿全文100%确认无隐藏"初始接入"节。
 
 **因此 B 需重新收窄卖点**：从"边训练边定位"（已被占）→ 再从"近场宽带CRB最优ISAC"（被 DPP-ISAC 占）→ **"位置未知初始接入下、不确定域上的 CRLB 最优 beam-split 训练码本（两阶段主动实验设计）+ 通感折中"**。若嫌新意余量薄，备选是**波束跟踪**（最不拥挤，但更慢）。
 
