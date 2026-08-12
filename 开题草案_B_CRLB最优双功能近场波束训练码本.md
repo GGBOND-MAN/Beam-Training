@@ -15,6 +15,7 @@
 
 | 竞品 | 做了什么 | 没做什么（= 你的空档） | 核实 |
 |---|---|---|---|
+| 🔴 **DPP-ISAC（最危险）**：H. …，"CRB Optimization for Near-Field Wideband ISAC: Delay-Phase Precoding for Beam Squint Mitigation," **IEEE WCL 2025, 14(11):3794-3798** | **近场宽带 + TTD/延迟-相位预编码 + 角/距 CRB 闭式 + min CRB s.t. 通信速率 + 通感折中**（penalty+BCD）——**几乎命中 B 的三支柱** | **不是训练码本**：它是**数据阶段、面向已知/已跟踪目标的发射预编码器**；无初始接入、无不确定域上的主动实验设计、无 beam-split 训练扫描 | ⚠️ **必读**（仅读到摘要/元数据） |
 | **Pattern Zooming**（arXiv:2608.03615, 2026, BUPT） | 宽带 + TD 波束扫描 + 波数域(DFT类)码本 + 角距**闭式几何估计器**；性能仅用 **RMSE** 实测 | 无 CRLB/统计下界、无码本最优设计、无通感折中（全文无 Cramér/CRB）；波数域码本（非极坐标/beam-split） | ✅ 2026-08-11 |
 | **Luo & Gao (TWC 2024) / arXiv:2309.14012 + 2509.14850** | beam-squint + MUSIC 角距定位（**估计器**）；机制最近（也用 TTD 控 squint 让不同子载波指向不同角/距） | 无码本最优设计、无通感折中 | ⚠️ 待读（PDF 已入库） |
 | **Pilot-Efficient**（Parvini 等, TU Dresden, **IEEE OJ-COMS 2026**, DOI 10.1109/OJCOMS.2026.3690933） | **窄带**；紧凑近场码本（用多用户干扰+空间相关降码本规模）+ 三阶段训练：子阵分层搜 AoD → **GILS 几何交叉最小二乘**融合定位 → 位置映射到码字 | 无 CRB/Fisher（全文 0 命中）、无 TTD/beam-split、无通感折中；码本目标是**降规模/抗干扰/省导频**，不是最小化估计界 | ✅ 2026-08-11 |
@@ -22,6 +23,8 @@
 > ✅ **Pilot-Efficient 已核实（2026-08-11 读全文 17 页）**：它与 B 的表面重叠（标题含 "Codebook Design" + 用到定位）是假象——它是**窄带、面向多用户降开销/抗干扰**的码本 + GILS 定位当"选码字的手段"，**没有 CRLB、没有 beam-split、没有通感折中**。反而是 B 的好**动机/基线**："已有近场码本设计只优化规模/干扰/开销，无人刻画或优化感知 CRLB，也无人给通感折中"。
 
 **共同空档（= B 的立足点）：没有一篇 (a) 推导该类波形的角/距 CRLB，(b) 按最小化 CRLB 去设计训练码本，(c) 给出通信-感知折中。**（Pattern Zooming 与 Pilot-Efficient 均已逐字核实确认不做这三点。）
+
+> 🔴 **2026-08-11 新增风险预警（诚实评估）**：检索发现 **IEEE WCL 2025 的 DPP-ISAC 竞品**已在**近场宽带 TTD** 下做了"CRB(角/距)闭式 + 最小化 + 通感折中"——这**压缩了 B 的新意余量**：B 不能再宣称"首个近场宽带 TTD 的 CRB 最优 ISAC 波形"。**B 存活的唯一防线收窄为**："**波束训练码本 / 初始接入 / 不确定域上的主动实验设计**"——即设计的是位置未知时的**训练扫描波形**（非已知目标的数据预编码器）。这条线上，DPP-ISAC / Fan Liu / 2311.05372 / 2302.01153 都没做。**动手前务必先精读该 WCL 2025 letter 全文，确认它确实停在"数据预编码器"、没碰"初始接入训练码本"。**（这一预警正是采纳了用户 ChatGPT 讨论里的提醒，详见第九节末的分析。）
 
 **两篇"帮手"论文（非竞品，已读原文，用作方法论母版与优化工具）：**
 - **Fan Liu et al., "Cramér-Rao Bound Optimization for Joint Radar-Communication Beamforming," TSP 2022** —— 把 CRB 当设计目标的**母版**：其问题 (19) = `min CRB  s.t. 每用户 SINR γ_k ≥ Γ_k + 发射功率预算`（单用户闭式解、多用户 SDR 全局最优）。B 直接抄这个骨架，把变量换成码本参数 (θ₁,α₁,θ₂,α₂)、把 SINR 约束换成通信阵列增益约束。它是**远场、窄带、纯波束成形**——正好把"近场 + 宽带 beam-split 训练码本"整块留给 B。
@@ -87,20 +90,27 @@ $\mu_{s,m}(\boldsymbol\eta)=\sqrt{P_t}\,\beta\,\mathbf a^{H}(f_m;\vartheta_u,\al
 $$
 [\mathbf J]_{ab}=\frac{2}{\sigma^2}\sum_{s=1}^{P}\sum_{m=1}^{M}\Re\!\left\{\frac{\partial \mu_{s,m}^*}{\partial \eta_a}\frac{\partial \mu_{s,m}}{\partial \eta_b}\right\}.
 $$
-利用相位线性性，$a_n=\frac{1}{\sqrt{N_t}}e^{j\varphi_n}$，$\varphi_n=-k_m(nd\,\vartheta-n^2d^2\alpha)$（符号依代码约定）：
+**半闭式核心（三阶矩表示，已在代码中数值验证）。** 关键观察：把每个波束的天线积
+$g_{s,m}(n)\triangleq h_m(n)\,w_{s,m}(n)$（$h_m(n)$ 精确球面波信道行，$w_{s,m}$ 码字）只需三个
+**对天线序号的加权矩**就能把导数写成闭式（无需有限差分、无需二维网格）：
 $$
-\frac{\partial a_n}{\partial\vartheta}=a_n\cdot j(-k_m nd),\qquad
-\frac{\partial a_n}{\partial\alpha}=a_n\cdot j(k_m n^2d^2).
+G^{(0)}_{s,m}=\sum_n g_{s,m}(n),\quad
+G^{(1)}_{s,m}=\sum_n n\,g_{s,m}(n),\quad
+G^{(2)}_{s,m}=\sum_n n^2 g_{s,m}(n).
 $$
-于是 $\partial\mu/\partial\vartheta,\ \partial\mu/\partial\alpha$ 都是**对天线序号加权求和**（权 $\propto k_m n$ 和 $k_m n^2$）的闭式表达。分块 FIM
-$\mathbf J=\begin{bmatrix}\mathbf J_{\eta\eta}&\mathbf J_{\eta\beta}\\ \mathbf J_{\beta\eta}&\mathbf J_{\beta\beta}\end{bmatrix}$，
-消去冗余参数 $\beta$ 得等效 $2\times2$ 信息矩阵
-$\tilde{\mathbf J}=\mathbf J_{\eta\eta}-\mathbf J_{\eta\beta}\mathbf J_{\beta\beta}^{-1}\mathbf J_{\beta\eta}$，
+利用 Fresnel/极坐标展开 $r_n\approx r-nd\sin\theta+\tfrac{n^2d^2\cos^2\theta}{2r}$（相位对 $\vartheta=\sin\theta,\ \alpha=\cos^2\theta/(2r)$ 线性），直接对 $(\theta,r)$ 求导得
 $$
-\mathrm{CRLB}(\vartheta_u)=[\tilde{\mathbf J}^{-1}]_{11},\quad
-\mathrm{CRLB}(\alpha_u)=[\tilde{\mathbf J}^{-1}]_{22}.
+\boxed{\;
+\frac{\partial \mu_{s,m}}{\partial\theta}=j\beta k_m\Big[d\cos\theta\,G^{(1)}_{s,m}+\tfrac{d^2\cos\theta\sin\theta}{r}\,G^{(2)}_{s,m}\Big],\quad
+\frac{\partial \mu_{s,m}}{\partial r}=-j\beta k_m\Big[G^{(0)}_{s,m}-\tfrac{d^2\cos^2\theta}{2r^2}\,G^{(2)}_{s,m}\Big]\;}
 $$
-距离 CRLB 由 $r=\cos^2\theta/(2\alpha)$ 经 Jacobian 变换：$\mathrm{CRLB}(r)\approx\left(\frac{\partial r}{\partial\alpha}\right)^2\mathrm{CRLB}(\alpha)+\dots$
+以及 $\partial\mu/\partial\Re\beta=G^{(0)}_{s,m},\ \partial\mu/\partial\Im\beta=jG^{(0)}_{s,m}$。把这四个导数代入上面的 FIM 求和即得 $4\times4$ 矩阵 $\mathbf J(\theta,r;\{\boldsymbol\phi_s\})$（对 $\beta$ 的两维即"消冗余参数"），
+$$
+\mathrm{CRLB}(\theta)=[\mathbf J^{-1}]_{11},\qquad \mathrm{CRLB}(r)=[\mathbf J^{-1}]_{22}.
+$$
+**物理含义**：$G^{(1)}$（权 $\propto k_m n$）承载角度信息、$G^{(2)}$（权 $\propto k_m n^2$）承载近场曲率(距离)信息、$G^{(0)}$ 里跨子载波的 $k_m$ 依赖承载 TOF(时延)测距——这解释了为何 2 GHz 带宽下距离 CRLB 可达亚毫米级。
+
+> **数值验证（已跑通，`optionB_crlb/crlb_closed_form.py`）**：上式半闭式 FIM 与对**精确** $r_n$ 做中心差分的 FIM 在 5 个测试点（$\theta\in[-20^\circ,30^\circ],\ r\in[10,40]$ m）逐一对照，$\sqrt{\mathrm{CRLB}}$ **相对误差 0.02%–0.18%**（角度）与 **≈0.02%**（距离）。即：Fresnel 近似导数几乎无损，半闭式可直接当作第五节优化的**快速可微目标**。这一"半闭式↔精确"对照本身就是论文里一个干净的小贡献点。
 
 > **推导可对照的模板**（照抄结构、换成你的 $\mathbf w_{s,m}$ 即可）：
 > - F. Liu et al., "CRB Optimization for Joint Radar-Communication Beamforming," TSP 2022（把 CRLB 当设计目标的范式）
@@ -113,19 +123,29 @@ $$
 
 ## 五、感知最优码本设计问题
 
-在保证通信训练功能（阵列增益 / 覆盖）的前提下，优化码本参数把定位 CRLB 压到最小：
+**两阶段主动波束训练（这是与所有 ISAC 预编码器竞品的硬切割点）。** 不做"已知真值 $(\theta,r)$ 下的单点 CRLB 最小化"——那会被审稿人一句"位置都知道了还训练什么"打回。改成**主动实验设计（optimal experiment design）**：
+- **阶段一（粗）**：用现有低开销 beam-split 扫描把用户粗定位到一个**不确定域** $\Omega=\{\theta\in[\hat\theta\pm\Delta_\theta],\ r\in[\hat r\pm\Delta_r]\}$。
+- **阶段二（精，本节设计）**：在**仅知 $\Omega$** 的前提下，联合设计 $P=k_0$ 个 beam-split 训练码字 $\{\boldsymbol\phi_s\}$，使**最坏情况**感知 CRLB 最小、同时保通信增益：
 $$
-\min_{\{\boldsymbol\phi_s\}_{s=1}^{P}}\ \ \max_{(\vartheta,\alpha)\in\mathcal R}\ \operatorname{tr}\big(\tilde{\mathbf J}^{-1}(\vartheta,\alpha;\{\boldsymbol\phi_s\})\big)
+\min_{\{\boldsymbol\phi_s\}_{s=1}^{P}}\ \ \max_{(\theta,r)\in\Omega}\ \Big[\tfrac{\mathrm{CRLB}_\theta}{\sigma_{\theta_0}^2}+\tfrac{\mathrm{CRLB}_r}{\sigma_{r_0}^2}\Big]
 \quad\text{s.t.}\quad
-\underbrace{G(\{\boldsymbol\phi_s\})\ge \gamma}_{\text{通信增益约束}},\ \
-\underbrace{\text{覆盖整个 }\mathcal R}_{\text{训练功能}},\ \
-P\le P_{\max}.
+\min_{(\theta,r)\in\Omega} G(\theta,r;\{\boldsymbol\phi_s\})\ge \gamma,\ \ P\le P_{\max}.
 $$
-- **通信-感知折中**：扫描约束门限 $\gamma$（或用权重 $\lambda\cdot\text{CRLB}+(1-\lambda)\cdot(-G)$），画出 **CRLB–阵列增益** Pareto 前沿——这是期刊里最出彩的一张图。
-- **求解思路**（由易到难，先能出图）：
-  1. **参数化搜索/网格**：$(\theta_1,\alpha_1,\theta_2,\alpha_2)$ 维度低，先粗网格 + 局部细化，直接出 baseline 对比与折中曲线。
-  2. **梯度/流形优化**：CRLB 对 $\boldsymbol\phi$ 可微，用 fmincon / manopt 做局部最优。
-  3. （可选）**交替优化**：训练覆盖约束与 CRLB 目标交替。
+（也可用区域平均/Bayesian CRLB $\int_\Omega \operatorname{tr}\tilde{\mathbf J}^{-1}\,\mathrm d\pi$ 代替最坏情况。）**关键设计杠杆**：噪声取**固定绝对值**后，把 beam-split 扫描从"扫满整个角-距空间"收窄到"只覆盖 $\Omega$"，就能把原本浪费在 $\Omega$ 外的子载波能量**集中到用户**上 → Fisher 信息↑ → CRLB↓。
+
+**已跑通的概念验证（`optionB_crlb/crlb_codebook_opt.py`，用第四节半闭式 CRLB 作目标）**：$\Omega$ 取 $\theta_0=11.54^\circ\pm1^\circ,\ r_0=20\pm2$ m；把扫描收窄到 $\Omega$ 尺度后，相对空间覆盖 baseline：
+
+| 码本 | worst-$\Omega$ $\sqrt{\mathrm{CRLB}_\theta}$ | worst-$\Omega$ $\sqrt{\mathrm{CRLB}_r}$ | worst-$\Omega$ 通信增益 |
+|---|---|---|---|
+| baseline（扫满全空间） | 0.0396° | 6.34 mm | 0.639 |
+| **$\Omega$-聚焦（本节设计）** | **0.0111°（↓3.57×）** | **2.39 mm（↓2.65×）** | **0.659（↑）** |
+
+即：所设计码本在**不牺牲、反而略升通信增益**的同时，把角/距 CRLB 同时压低约 2.6–3.6 倍（图 `optionB_crlb/crlb_pareto.png`：收窄扫描→CRLB 单调下降，且折中曲线上"聚焦设计"点**同时优于** baseline 的增益与 CRLB）。
+
+- **通信-感知折中**：扫描门限 $\gamma$（或覆盖宽度 $w$）得 **CRLB–阵列增益** Pareto 前沿——期刊主打图。
+- **求解思路**：$(\theta_1,\alpha_1,\theta_2,\alpha_2)\times P$ 维度低；先粗网格/单参数收窄（已出图），再上 fmincon/manopt 或 **penalty+BCD**（对标竞品的解法）做局部最优。
+
+> **硬切割（审稿人必问，务必写清）**：近场宽带 TTD 的 **"CRB 最优 ISAC 预编码器"** 已被 [WCL 2025 DPP 竞品](#) 与 Fan Liu(TSP'22)/arXiv:2311.05372 做过——但它们都是**数据阶段、面向已知/已跟踪目标的发射预编码器**。B 是**初始接入阶段的波束训练码本**：用户位置**未知**，在**不确定域 $\Omega$ 上做主动实验设计**，设计的是"下一组训练波束扫到哪里最能提取 $(\theta,r)$ 的 Fisher 信息"。对象（训练码本 vs 数据预编码器）、场景（位置未知的初始接入 vs 已知目标）、贡献（active experiment design vs 波形优化）都不同。**这是 B 在 CRB-ISAC 已拥挤下仍成立的关键，也是必须守住的唯一防线。**
 
 ---
 

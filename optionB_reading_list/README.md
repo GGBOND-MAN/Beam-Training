@@ -4,6 +4,10 @@
 仓库根目录已有的另 4 篇（Distance-Dependent Beam Split、Fan Liu CRB、Pattern Zooming、
 Spatial-Chirp、Rainbow、综述 2504.05578 等）不在此列。所有条目 arXiv 号均已核实真实可查。
 
+## 🔴🔴 最高优先（新发现的最危险竞品，动手前必读全文）
+
+- **"Cramér-Rao Bound Optimization for Near-Field Wideband ISAC: Delay-Phase Precoding for Beam Squint Mitigation," IEEE Wireless Communications Letters, vol. 14, no. 11, pp. 3794–3798, 2025.** —— IEEE Xplore 获取（疑似无 arXiv 版，需下载后传进仓库）。**近场宽带 + TTD/DPP + 角距 CRB 闭式 + min CRB s.t. 通信 + penalty/BCD + 通感折中**，几乎命中 B 三支柱。**它是数据阶段的 ISAC 发射预编码器，不是初始接入的训练码本**——B 的唯一防线就是这条切割，动手前务必逐字确认它没碰"训练码本 / 不确定域主动实验设计"。
+
 ## 🔴 第一梯队（必读，决定能否动笔）
 
 | 文件 | 论文 | 为什么读 |
