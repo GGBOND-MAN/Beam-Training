@@ -33,4 +33,6 @@ metadata:
 
 **§3/§4 半闭式 CRLB（2026-08-11 已推导+验证，`optionB_crlb/crlb_closed_form.py`）**：把每波束天线积的三阶矩 G0=Σg, G1=Σn·g, G2=Σn²·g（g=h_m(n)w_{s,m}(n)）代入 Fresnel 展开，得 ∂μ/∂θ、∂μ/∂r 的闭式（G1↔角度、G2↔近场曲率/距离、G0跨子载波↔TOF测距）。半闭式FIM vs 精确有限差分FIM，5点相对误差 0.02%–0.18%。
 
-**§5 感知最优码本（2026-08-11 概念验证，`optionB_crlb/crlb_codebook_opt.py`，图 crlb_pareto.png）**：两阶段主动实验设计——阶段一粗定位得不确定域Ω，阶段二 min-max_Ω CRLB s.t. 通信增益。固定绝对噪声下把 beam-split 扫描从"扫满全空间"收窄到"只覆盖Ω"，worst-Ω 角/距 CRLB 同时↓3.57×/2.65×，通信增益 0.639→0.659（不降反升）。核心卖点=训练码本的主动实验设计，切割 DPP-ISAC 数据预编码器。相关背景见 [[matlab-agentic-setup]]、[[pdf-extraction-pymupdf]]。
+**§5 感知最优码本（2026-08-11 概念验证，`optionB_crlb/crlb_codebook_opt.py`，图 crlb_pareto.png）**：两阶段主动实验设计——阶段一粗定位得不确定域Ω，阶段二 min-max_Ω CRLB s.t. 通信增益。固定绝对噪声下把 beam-split 扫描从"扫满全空间"收窄到"只覆盖Ω"，worst-Ω 角/距 CRLB 同时↓3.57×/2.65×，通信增益 0.639→0.659（不降反升）。核心卖点=训练码本的主动实验设计，切割 DPP-ISAC 数据预编码器。
+
+**§5之二 第二支柱=训练开销↔定位CRLB折中（2026-08-12，冲主刊，`optionB_crlb/crlb_overhead.py`，图 crlb_overhead.png）**：FIM对训练时隙可加 J(T)=Σ_s J_s → √CRLB∝T^{-1/2}(baseline实测-0.53验证)、最优码本更陡(-0.83,兼具集中增益)。达 5mm 距离精度 baseline 需 T=4、最优仅 T=1 → 训练开销省75%。这维度只有"训练"框架有、预编码器没有 → 再次切割ISAC预编码器竞品。已写入开题草案 §5之二 + §1 四点贡献(两支柱)。全部推送并合并入main。相关背景见 [[matlab-agentic-setup]]、[[pdf-extraction-pymupdf]]。

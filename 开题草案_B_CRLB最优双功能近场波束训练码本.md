@@ -41,10 +41,11 @@
 - **Fan Liu et al., "Cramér-Rao Bound Optimization for Joint Radar-Communication Beamforming," TSP 2022** —— 把 CRB 当设计目标的**母版**：其问题 (19) = `min CRB  s.t. 每用户 SINR γ_k ≥ Γ_k + 发射功率预算`（单用户闭式解、多用户 SDR 全局最优）。B 直接抄这个骨架，把变量换成码本参数 (θ₁,α₁,θ₂,α₂)、把 SINR 约束换成通信阵列增益约束。它是**远场、窄带、纯波束成形**——正好把"近场 + 宽带 beam-split 训练码本"整块留给 B。
 - **Xu Shi et al., "Spatial-Chirp Codebook-Based Hierarchical Beam Training," TWC 2023**（arXiv:2210.03345）—— 窄带纯训练、无 CRB、无定位；本文只用作**优化工具来源**（流形优化 + 交替最小化），可搬到 B 第五节的码本参数优化。
 
-**三句话卖点**（写进 Introduction 的 contributions）：
-1. **理论极限**：首次推导近场宽带 distance-dependent beam-split 训练波形下角度/距离估计的 CRLB，写成 TTD/PS 码本参数 (θ₁,α₁,θ₂,α₂) 的显式函数。
-2. **最优设计**：以最小化 CRLB 为目标优化码本参数（感知最优码本），并加通信阵列增益约束 → **通信-感知 Pareto 折中**。
-3. **对标**：证明现有训练+定位方案（Pattern Zooming / GILS / beam-squint MUSIC）离 CRLB 尚有差距，所提最优码本可逼近该界。
+**四点贡献（两支柱，写进 Introduction）**：
+1. **理论极限**（半闭式）：首次推导近场宽带 distance-dependent beam-split **训练**波形下角度/距离估计的 CRLB，写成 TTD/PS 码本参数 (θ₁,α₁,θ₂,α₂) 的显式函数（三阶天线矩 G⁰/G¹/G²，已数值验证 0.02–0.18%）。
+2. **最优设计 + 通感折中**（支柱一）：以**不确定域 Ω 上最坏情况 CRLB**为目标做**主动实验设计**（非已知目标预编码器），加通信增益约束 → 通感 Pareto；PoC 显示角/距 CRLB 同降 3.57×/2.65× 且增益不降。
+3. **训练开销↔定位精度标度律**（支柱二，冲主刊）：把定位 CRLB 刻画为训练开销 T 的显式标度（baseline ∝T⁻⁰·⁵³验证可加性、最优∝T⁻⁰·⁸³），给最小开销 T\*(ε)；证明固定精度下**训练开销省 ~75%**。
+4. **对标**：证明现有训练+定位方案（Pattern Zooming / GILS / beam-squint MUSIC）离 CRLB 尚有差距，所提最优码本可逼近该界。
 
 > 与 Pattern Zooming 的**硬切割**（审稿人必问）：它用波数域 DFT 码本 + "pattern zooming"效应 + 闭式**估计器**，目标是估位置；你用极坐标/distance-dependent beam-split 码本 + **CRLB 界** + **最优化设计** + **通感折中**，目标是刻画极限并最优设计波形。二者码本、贡献类型、目标都不同。
 
@@ -157,6 +158,32 @@ $$
 - **求解思路**：$(\theta_1,\alpha_1,\theta_2,\alpha_2)\times P$ 维度低；先粗网格/单参数收窄（已出图），再上 fmincon/manopt 或 **penalty+BCD**（对标竞品的解法）做局部最优。
 
 > **硬切割（审稿人必问，务必写清）**：近场宽带 TTD 的 **"CRB 最优 ISAC 预编码器"** 已被 [WCL 2025 DPP 竞品](#) 与 Fan Liu(TSP'22)/arXiv:2311.05372 做过——但它们都是**数据阶段、面向已知/已跟踪目标的发射预编码器**。B 是**初始接入阶段的波束训练码本**：用户位置**未知**，在**不确定域 $\Omega$ 上做主动实验设计**，设计的是"下一组训练波束扫到哪里最能提取 $(\theta,r)$ 的 Fisher 信息"。对象（训练码本 vs 数据预编码器）、场景（位置未知的初始接入 vs 已知目标）、贡献（active experiment design vs 波形优化）都不同。**这是 B 在 CRB-ISAC 已拥挤下仍成立的关键，也是必须守住的唯一防线。**
+
+---
+
+## 五之二、第二支柱：训练开销 ↔ 定位 CRLB 折中（把 B 顶到主刊水位）
+
+**为什么加这条**：光靠"训练码本 vs 预编码器"的切割，主刊审稿人可能嫌薄。加上"**训练开销—定位精度**的理论折中"能补足深度，而且它是个**只有"训练"框架才有、"预编码器"框架根本没有**的量纲（预编码器没有导频/开销概念）——所以第二支柱**又一次**把 B 和所有 ISAC-预编码器竞品分开。
+
+**核心理论（干净、可写闭式）**：FIM 对训练时隙**可加**，
+$$
+\mathbf J(T)=\sum_{s=1}^{T}\mathbf J_s(\{\boldsymbol\phi_s\}),\qquad \mathbf J_s\succeq 0,
+$$
+故每加一个 beam-split 训练码字（时隙），CRLB **单调下降**。当 $T$ 个码字是对 $\Omega$ 的"有效独立观测"时，感知信息近似线性增长 → **$\sqrt{\mathrm{CRLB}}\propto T^{-1/2}$**；而 **CRLB 最优码本**在增加时隙的同时**收窄每个时隙的覆盖**（集中度 $\propto T$），使 $\mathbf J(T)$ 增长更快 → 标度更陡。达到目标精度 $\varepsilon$ 所需**最小训练开销** $T^\star(\varepsilon)$ 因此远小于启发式码本。
+
+**已跑通的量化（`optionB_crlb/crlb_overhead.py`，图 `crlb_overhead.png`）**：$\Omega=\theta_0=11.54^\circ\pm1^\circ,\ r_0=20\pm2$ m，固定每时隙功率、绝对噪声：
+
+| 训练开销 $T$（beam-split 时隙数） | baseline（扫满全空间）worst-$\Omega$ $\sqrt{\mathrm{CRLB}_r}$ | **$\Omega$-聚焦最优** |
+|---|---|---|
+| 1 | 10.40 mm | **3.46 mm** |
+| 2 | 6.34 mm | **2.07 mm** |
+| 4 | 4.78 mm | **0.95 mm** |
+| 8 | 3.30 mm | **0.64 mm** |
+
+- **标度律实测**：baseline $\sqrt{\mathrm{CRLB}_r}\propto T^{-0.53}$（**验证了 $T^{-1/2}$ 可加性理论**）；$\Omega$-聚焦最优 $\propto T^{-0.83}$（更陡，因兼有"集中"增益）。
+- **固定精度下的开销节省**：达到 $\sqrt{\mathrm{CRLB}_r}\le 5$ mm，baseline 需 **$T=4$** 时隙，最优码本仅需 **$T=1$** → **训练开销省 75%**（等价地：固定开销下角/距精度提升 ~3×）。
+
+**第二支柱的贡献句（写进 contributions）**：*首次把近场 beam-split 训练码本的角/距定位 CRLB 刻画为训练开销 $T$ 的显式标度律 $\mathrm{CRLB}\!\sim\!T^{-1}$，并给出达到目标定位精度的最小开销 $T^\star(\varepsilon)$；证明所提 CRLB 最优码本在固定精度下把训练开销降低约 75%（固定开销下精度提升约 3 倍）。* 这把 B 的"低开销训练"血统（Zheng distance-dependent beam-split 基线）直接接到"定位精度极限"上，是 ISAC-预编码器路线完全没有的维度。
 
 ---
 
