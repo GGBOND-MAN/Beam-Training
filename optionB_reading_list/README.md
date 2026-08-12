@@ -4,9 +4,9 @@
 仓库根目录已有的另 4 篇（Distance-Dependent Beam Split、Fan Liu CRB、Pattern Zooming、
 Spatial-Chirp、Rainbow、综述 2504.05578 等）不在此列。所有条目 arXiv 号均已核实真实可查。
 
-## 🔴🔴 最高优先（新发现的最危险竞品，动手前必读全文）
+## 🔴🔴 最重要竞品（✅已读全文核实，防线守得住）
 
-- **"Cramér-Rao Bound Optimization for Near-Field Wideband ISAC: Delay-Phase Precoding for Beam Squint Mitigation," IEEE Wireless Communications Letters, vol. 14, no. 11, pp. 3794–3798, 2025.** —— IEEE Xplore 获取（疑似无 arXiv 版，需下载后传进仓库）。**近场宽带 + TTD/DPP + 角距 CRB 闭式 + min CRB s.t. 通信 + penalty/BCD + 通感折中**，几乎命中 B 三支柱。**它是数据阶段的 ISAC 发射预编码器，不是初始接入的训练码本**——B 的唯一防线就是这条切割，动手前务必逐字确认它没碰"训练码本 / 不确定域主动实验设计"。
+- `CRB_Optimization_NearField_Wideband_ISAC_DPP_ZhangWei_WCL2025.pdf` —— Zhide Zhang, Zhongxiang Wei, Zhixiang Xu, Haiyong Zeng, Xu Zhu, **"CRB Optimization for Near-Field Wideband ISAC: Delay-Phase Precoding for Beam Squint Mitigation," IEEE WCL 14(11):3794–3798, 2025** (DOI 10.1109/LWC.2025.3605391)。**近场宽带 + TTD/DPP + 角距 CRB 闭式 + min CRB s.t. 通信 + penalty/BCD + 通感折中**——几乎命中 B 三支柱。**✅ 2026-08-12 读全文判决：不威胁 B。** 全文 beam training/codebook/initial access/pilot 各 0 次；它是 BS 服务下行用户 + 同时感知一个独立目标的 **DPP 数据预编码器**（优化变量 F,t 作用于 OFDM 数据符号），min **目标位置** CRB s.t. 用户通信 QoS。与 B 的四条硬切割见开题草案 §1（对象/场景/任务/通感对象）。→ B 在"训练码本 / 初始接入 / 不确定域主动实验设计"这条线**独占**。
 
 ## 🔴 第一梯队（必读，决定能否动笔）
 
