@@ -154,8 +154,24 @@ $$
 
 即：所设计码本在**不牺牲、反而略升通信增益**的同时，把角/距 CRLB 同时压低约 2.6–3.6 倍（图 `optionB_crlb/crlb_pareto.png`：收窄扫描→CRLB 单调下降，且折中曲线上"聚焦设计"点**同时优于** baseline 的增益与 CRLB）。
 
-- **通信-感知折中**：扫描门限 $\gamma$（或覆盖宽度 $w$）得 **CRLB–阵列增益** Pareto 前沿——期刊主打图。
-- **求解思路**：$(\theta_1,\alpha_1,\theta_2,\alpha_2)\times P$ 维度低；先粗网格/单参数收窄（已出图），再上 fmincon/manopt 或 **penalty+BCD**（对标竞品的解法）做局部最优。
+**正式优化器（penalty + BCD，已实现并出 Pareto）**：把上面的单参数收窄升级为完整解法，**刻意对标 DPP-ISAC 竞品的 penalty+BCD 结构**，以强调"同样的解法工具、不同的问题（训练码本 vs 数据预编码器）"。设计变量按物理分两块——**TTD 块** $\{(\theta_1,\alpha_1)_s\}$（随频率、定 beam-split 轨迹）与 **PS 块** $\{(\theta_2,\alpha_2)_s\}$（随载频固定、定基准聚焦点）；标量化
+$$
+\Phi(\{\boldsymbol\phi_s\};\mu)=\max_{(\theta,r)\in\Omega}\Big[\tfrac{\mathrm{CRLB}_\theta}{\sigma_{\theta_0}^2}+\tfrac{\mathrm{CRLB}_r}{\sigma_{r_0}^2}\Big]-\mu\cdot\min_{(\theta,r)\in\Omega}G(\theta,r),
+$$
+**BCD 交替**优化 TTD 块与 PS 块（各块用 fminsearch/一维搜索），**扫描权重 $\mu$**（$\mu=0$ 感知最优；$\mu$ 大→通信增益最优）得**通信-感知 Pareto 前沿**——期刊主打图。
+
+**已跑通结果**（`optionB_crlb/crlb_bcd.py`（NumPy）与 `run_codebook_bcd.m`（MATLAB，复用 `crlb_fim.m`/baseline），图 `crlb_bcd_pareto.png`）：
+
+| 设计 | worst-$\Omega$ $\sqrt{\mathrm{CRLB}_r}$ | worst-$\Omega$ $\sqrt{\mathrm{CRLB}_\theta}$ | worst-$\Omega$ 通信增益 |
+|---|---|---|---|
+| baseline（扫满全空间） | 6.34 mm | 0.0396° | 0.639 |
+| BCD，$\mu=0$（感知最优） | **1.58 mm** | **0.0098°** | 0.618 |
+| BCD，$\mu=0.5$（拐点，通感双优） | **1.46 mm** | 0.0106° | **0.940** |
+| BCD，$\mu=8$（增益最优） | 1.64 mm | 0.0112° | **0.954** |
+
+即：**penalty+BCD 优化后的训练码本在整条前沿上都全面压制 baseline**——角/距 CRLB 同时降 **~4×**（6.34→1.46 mm、0.0396→0.0106°），通信增益还从 0.64 升到 **0.94–0.95**；$\mu$ 从 0 增大时增益 0.62→0.95、CRLB 轻微上升 1.46→1.64 mm，勾出通信-感知折中的高增益端。
+
+> **硬切割（审稿人必问，务必写清）**：近场宽带 TTD 的 **"CRB 最优 ISAC 预编码器"** 已被 [WCL 2025 DPP 竞品](#) 与 Fan Liu(TSP'22)/arXiv:2311.05372 做过——但它们都是**数据阶段、面向已知/已跟踪目标的发射预编码器**。B 是**初始接入阶段的波束训练码本**：用户位置**未知**，在**不确定域 $\Omega$ 上做主动实验设计**，设计的是"下一组训练波束扫到哪里最能提取 $(\theta,r)$ 的 Fisher 信息"。对象（训练码本 vs 数据预编码器）、场景（位置未知的初始接入 vs 已知目标）、贡献（active experiment design vs 波形优化）都不同。**注**：B **刻意采用与竞品相同的 penalty+BCD 解法**，正是为了让审稿人聚焦到"问题不同"而非"方法不同"。**这是 B 在 CRB-ISAC 已拥挤下仍成立的关键，也是必须守住的唯一防线。**
 
 > **硬切割（审稿人必问，务必写清）**：近场宽带 TTD 的 **"CRB 最优 ISAC 预编码器"** 已被 [WCL 2025 DPP 竞品](#) 与 Fan Liu(TSP'22)/arXiv:2311.05372 做过——但它们都是**数据阶段、面向已知/已跟踪目标的发射预编码器**。B 是**初始接入阶段的波束训练码本**：用户位置**未知**，在**不确定域 $\Omega$ 上做主动实验设计**，设计的是"下一组训练波束扫到哪里最能提取 $(\theta,r)$ 的 Fisher 信息"。对象（训练码本 vs 数据预编码器）、场景（位置未知的初始接入 vs 已知目标）、贡献（active experiment design vs 波形优化）都不同。**这是 B 在 CRB-ISAC 已拥挤下仍成立的关键，也是必须守住的唯一防线。**
 

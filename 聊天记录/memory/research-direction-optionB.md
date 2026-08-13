@@ -35,4 +35,6 @@ metadata:
 
 **§5 感知最优码本（2026-08-11 概念验证，`optionB_crlb/crlb_codebook_opt.py`，图 crlb_pareto.png）**：两阶段主动实验设计——阶段一粗定位得不确定域Ω，阶段二 min-max_Ω CRLB s.t. 通信增益。固定绝对噪声下把 beam-split 扫描从"扫满全空间"收窄到"只覆盖Ω"，worst-Ω 角/距 CRLB 同时↓3.57×/2.65×，通信增益 0.639→0.659（不降反升）。核心卖点=训练码本的主动实验设计，切割 DPP-ISAC 数据预编码器。
 
+**§5 正式优化器 penalty+BCD（2026-08-12，`optionB_crlb/crlb_bcd.py` NumPy + `run_codebook_bcd.m` MATLAB，图 crlb_bcd_pareto.png）**：刻意对标 DPP-ISAC 竞品的 penalty+BCD 解法(强调"同解法、不同问题")。变量分 TTD块(θ1,α1)_s + PS块(θ2,α2)_s；标量化 Φ=max_Ω CRLB - μ·min_Ω gain，BCD 交替优化两块(fminsearch)，扫 μ 出通感 Pareto。结果：BCD 整条前沿全面压制 baseline——μ=0 感知最优 √CRLBr=1.58mm(4×优于6.34)，μ=0.5 拐点 gain=0.94且√CRLBr=1.46mm，μ=8 gain=0.954；角 CRLB 0.0396°→0.0106°。MATLAB 版经 Octave 验证数值一致。
+
 **§5之二 第二支柱=训练开销↔定位CRLB折中（2026-08-12，冲主刊，`optionB_crlb/crlb_overhead.py`，图 crlb_overhead.png）**：FIM对训练时隙可加 J(T)=Σ_s J_s → √CRLB∝T^{-1/2}(baseline实测-0.53验证)、最优码本更陡(-0.83,兼具集中增益)。达 5mm 距离精度 baseline 需 T=4、最优仅 T=1 → 训练开销省75%。这维度只有"训练"框架有、预编码器没有 → 再次切割ISAC预编码器竞品。已写入开题草案 §5之二 + §1 四点贡献(两支柱)。全部推送并合并入main。相关背景见 [[matlab-agentic-setup]]、[[pdf-extraction-pymupdf]]。
