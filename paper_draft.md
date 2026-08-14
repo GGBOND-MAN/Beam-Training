@@ -125,6 +125,13 @@ and hence a minimum overhead $T^\star(\varepsilon)\!\approx\!\mathrm{CRB}_1/\var
 - **Fig. 1 (CRB validation, `crlb_validation`)**: Monte-Carlo ML RMSE tracks $\sqrt{\mathrm{CRB}}$ over 0–25 dB for both angle and range (efficient estimator; the bound is tight).
 - **Table II / Fig. 2 (design + Pareto, `crlb_bcd_pareto`)**: baseline vs penalty+BCD frontier; ~4× CRB reduction with higher gain; the trade-off appears at the high-gain end.
 - **Fig. 3 (overhead scaling, `crlb_overhead`)**: $\sqrt{\mathrm{CRB}}$ vs $T$ with $T^{-1/2}$ reference; 75% overhead saving at 5 mm.
+- **Fig. 4 (two baselines, `crlb_baselines`)**: vs the classical **exhaustive 2-D polar search** (narrowband, one look per codeword, O($N_\theta S$) pilots). It is stuck at **metre-level** range (no time-of-flight; near-field ranging then rests only on weak wavefront curvature) — ~$10^3\times$ worse than wideband beam split — and worse in angle too (fewer total looks). This isolates the bandwidth advantage: a wideband beam-split pilot multiplexes $M$ subcarrier looks, so mm ranging is reached with $O(\text{few})$ pilots vs $O(N_\theta S)$ for exhaustive polar. Summary of the two baselines vs proposed:
+
+| Method | Bandwidth | Range CRB √ (worst-$\Omega$) | Full-space overhead |
+|---|---|---|---|
+| Exhaustive 2-D polar search | narrowband | ~2.5 m (floor) | $O(N_\theta S)\!\approx\!10^2$–$10^3$ |
+| Baseline beam split | wideband | 6.34 mm | $O(\text{few})$ |
+| Proposed | wideband | 1.46 mm | $O(\text{few})$ |
 
 **Table II (worst-$\Omega$, SNR ref 10 dB).**
 
