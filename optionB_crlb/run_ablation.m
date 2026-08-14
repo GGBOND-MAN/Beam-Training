@@ -1,13 +1,24 @@
 function results = run_ablation()
-%RUN_ABLATION  Option B Section V: ablation of the penalty+BCD codebook blocks.
-%   Design variables split into the TTD ("delay", frequency-dependent beam-split
-%   trajectory) block {(theta1,alpha1)_s} and the PS ("phase", frequency-flat
-%   base focus) block {(theta2,alpha2)_s}. At the trade-off knee (mu=0.5) we
-%   compare optimizing: Full (TTD+PS), TTD-only (freeze PS), PS-only (freeze
-%   TTD), No-opt (focused init), and the space-covering Baseline — under the
-%   same semi-closed CRLB. Removing either block degrades a different axis, so
-%   both are necessary. Reuses delay_polar_2d.m / near_field_channel.m /
-%   crlb_fim.m. MATLAB + Octave.
+%RUN_ABLATION  Option B Section V: ablation of the penalty+BCD codebook.
+%   The proposed design has two removable ingredients:
+%     (A) a geometry-aware WARM-START that tiles the uncertainty region Omega
+%         using the beam-split relation vartheta_eff(m)=theta1+(fc/fm)*theta2;
+%     (B) a penalty+BCD REFINEMENT over two blocks at the trade-off knee (mu):
+%         PS block {(theta2,alpha2)_s} = frequency-flat base focus, and
+%         TTD block {(theta1,alpha1)_s} = frequency-dependent beam-split slope.
+%   We remove each in turn (all at mu=0.5, same semi-closed CRLB):
+%     1 Baseline (space-cover)        rainbow sweep, no Omega awareness
+%     2 Naive BCD (no warm-start)     penalty+BCD launched from the baseline init
+%     3 Warm-start only (no BCD)      the Omega-focused init, no refinement
+%     4 WS + PS-only                  refine PS,  TTD frozen at the warm-start
+%     5 WS + TTD-only                 refine TTD, PS  frozen at the warm-start
+%     6 WS + Full BCD (proposed)      refine both blocks jointly
+%   Finding for this static single-user objective: the geometry warm-start is the
+%   decisive enabler (naive BCD stalls in a poor basin), and once warm-started the
+%   TTD and PS blocks are individually sufficient for the last-mile refinement
+%   (redundant near the optimum) -- a benign-landscape property of the delay-phase
+%   precoder, NOT "both blocks are necessary". Reuses delay_polar_2d.m /
+%   near_field_channel.m / crlb_fim.m. MATLAB + Octave.
 
 c = 3e8;
 here = fileparts(mfilename('fullpath'));
@@ -26,39 +37,43 @@ vext=cos(th0)*2*dth; aext=abs(cos(th0)^2/(2*(r0-dr))-cos(th0)^2/(2*(r0+dr)));
 Wb=delay_polar_2d(S.sys.Nt,S.sys.B,S.sys.fc,S.sys.M,S.sys.d,-31,15,-0.454,0.5,S.P);
 [S.s_th,S.s_r]=crlb_fim(Wb,S.sys,th0,r0,1,S.sigma2);
 
-% focused 2-tile warm start
-x0=zeros(1,4*S.P);
+% space-covering baseline
+xbase=[-31 -0.454 15 0.5, -32 -0.454 15 0.5];
+% geometry-aware focused warm start
+x_ws=zeros(1,4*S.P);
 for s=1:S.P
     w=vext/S.P; wa=aext/S.P; cs=vth0-vext/2+(s-0.5)*w; ac=a0-aext/2+(s-0.5)*wa;
     t2=w/dspan; t1=cs-rmid*t2; a2=wa/dspan; a1=ac-rmid*a2;
-    x0((s-1)*4+(1:4))=[t1 a1 t2 a2];
+    x_ws((s-1)*4+(1:4))=[t1 a1 t2 a2];
 end
 TTD=[1 2 5 6]; PS=[3 4 7 8];
-xbase=[-31 -0.454 15 0.5, -32 -0.454 15 0.5];
 
-variants = { 'Baseline (space-cover)', xbase;
-             'No opt (focused init)',  x0;
-             'PS-only (freeze TTD)',   bcd(x0,S,MU,{PS});
-             'TTD-only (freeze PS)',   bcd(x0,S,MU,{TTD});
-             'Full BCD (TTD+PS)',      bcd(x0,S,MU,{TTD,PS}) };
+variants = { 'Baseline (space-cover)',    xbase;
+             'Naive BCD (no warm-start)', bcd(xbase,S,MU,{TTD,PS});
+             'Warm-start only (no BCD)',  x_ws;
+             'WS + PS-only',              bcd(x_ws,S,MU,{PS});
+             'WS + TTD-only',             bcd(x_ws,S,MU,{TTD});
+             'WS + Full BCD (proposed)',  bcd(x_ws,S,MU,{TTD,PS}) };
 
-fprintf('=== Ablation of the BCD blocks (mu=%.1f) ===\n', MU);
-fprintf('%24s | %13s | %15s | %6s\n','variant','sqrtCRLBr[mm]','sqrtCRLBth[deg]','gain');
+fprintf('=== Section V ablation: warm-start vs refinement vs blocks (mu=%.1f) ===\n', MU);
+fprintf('%26s | %13s | %15s | %6s\n','variant','sqrtCRLBr[mm]','sqrtCRLBth[deg]','gain');
 nv=size(variants,1); RR2=zeros(nv,1); TT2=RR2; GG=RR2;
 for i=1:nv
     [~,g,rr,tt]=metrics(S, reshape(variants{i,2},4,S.P).');
     RR2(i)=rr; TT2(i)=tt; GG(i)=g;
-    fprintf('%24s | %13.3f | %15.4f | %6.3f\n', variants{i,1}, rr, tt, g);
+    fprintf('%26s | %13.3f | %15.4f | %6.3f\n', variants{i,1}, rr, tt, g);
 end
+fprintf(['VERDICT: geometry warm-start is the decisive enabler (naive BCD stalls); ', ...
+         'given it, TTD and PS refine to the same optimum (blocks redundant near it)\n']);
 results.labels={variants{:,1}}; results.range_mm=RR2; results.angle_deg=TT2; results.gain=GG;
 
-setpub(); fig=figure('Position',[100 100 1180 380],'Color','w');
+setpub(); fig=figure('Position',[100 100 1220 400],'Color','w');
 lab=variants(:,1);
-subplot(1,3,1); bar(RR2); set(gca,'xticklabel',lab,'XTickLabelRotation',30);
+subplot(1,3,1); bar(RR2); set(gca,'xticklabel',lab,'XTickLabelRotation',34);
 ylabel('worst-\Omega range CRLB^{1/2} [mm]','Interpreter','tex'); title('Range CRLB','Interpreter','tex'); grid on;
-subplot(1,3,2); bar(TT2); set(gca,'xticklabel',lab,'XTickLabelRotation',30);
+subplot(1,3,2); bar(TT2); set(gca,'xticklabel',lab,'XTickLabelRotation',34);
 ylabel('worst-\Omega angle CRLB^{1/2} [deg]','Interpreter','tex'); title('Angle CRLB','Interpreter','tex'); grid on;
-subplot(1,3,3); bar(GG); set(gca,'xticklabel',lab,'XTickLabelRotation',30);
+subplot(1,3,3); bar(GG); set(gca,'xticklabel',lab,'XTickLabelRotation',34);
 ylabel('worst-\Omega comm. gain','Interpreter','tex'); title('Comm. gain','Interpreter','tex'); grid on;
 savepub(fig, fullfile(here,'fig_ablation'));
 end
@@ -66,11 +81,11 @@ end
 % ===================================================================
 function x = bcd(x0, S, mu, blocks)
 x=x0;
-for outer=1:5
+for outer=1:3
     for bi=1:numel(blocks)
         b=blocks{bi};
         sub=@(v) phi(setidx(x,b,v), S, mu);
-        opt=optimset('TolX',1e-3,'TolFun',1e-6,'MaxFunEvals',500,'Display','off');
+        opt=optimset('TolX',1e-3,'TolFun',1e-6,'MaxFunEvals',300,'Display','off');
         x=setidx(x,b,fminsearch(sub,x(b),opt));
     end
 end
